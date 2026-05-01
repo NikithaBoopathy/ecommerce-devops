@@ -1,0 +1,431 @@
+Yes — that is actually the BEST approach.
+
+Do NOT start Kubernetes with all 4 microservices immediately.
+
+Start with ONLY:
+
+```text id="gq6jz9"
+user-service
+```
+
+Understand:
+
+* Deployment
+* Pod
+* Service
+* Networking
+* Image pulling
+* Scaling
+
+Then expand to:
+
+* product-service
+* order-service
+* payment-service
+* postgres
+
+That is exactly how engineers learn Kubernetes.
+
+---
+
+# Recommended Learning Order
+
+```text id="54u0w5"
+1. One Docker container
+2. One Kubernetes Pod
+3. One Deployment
+4. One Service
+5. Scaling
+6. Multiple microservices
+7. PostgreSQL
+8. Ingress
+9. ConfigMaps & Secrets
+10. Helm
+```
+
+---
+
+# First Kubernetes Architecture
+
+Start SIMPLE:
+
+```text id="q96af7"
+Client
+   ↓
+Kubernetes Service
+   ↓
+User-Service Pod
+```
+
+---
+
+# What You Need First
+
+For user-service you need ONLY:
+
+## 1. Deployment
+
+Creates pod.
+
+## 2. Service
+
+Exposes application.
+
+---
+
+# Which Service Type To Use?
+
+Kubernetes has multiple service types.
+
+| Type         | Purpose                |
+| ------------ | ---------------------- |
+| ClusterIP    | Internal communication |
+| NodePort     | Access from outside    |
+| LoadBalancer | Cloud external access  |
+| ExternalName | DNS mapping            |
+
+---
+
+# For Your Current VM Learning
+
+Use:
+
+```text id="nxtjlwm"
+NodePort
+```
+
+Why?
+
+Because:
+
+* you are on local VM
+* no cloud load balancer
+* easiest to access from browser/curl
+
+---
+
+# Architecture With NodePort
+
+```text id="njlwm3"
+Browser / curl
+      ↓
+VM-IP:30081
+      ↓
+Kubernetes Service
+      ↓
+User-Service Pod
+      ↓
+Spring Boot App
+```
+
+---
+
+# Step 1 Deployment YAML
+
+Create:
+
+```text id="1qjlwm"
+user-deployment.yml
+```
+
+Example:
+
+```yaml id="qk5bgp"
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: user-deployment
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: user-service
+
+  template:
+    metadata:
+      labels:
+        app: user-service
+
+    spec:
+      containers:
+      - name: user-service
+
+        image: nikithaboopathy/ecommerce-user-service:v1
+
+        ports:
+        - containerPort: 8081
+```
+
+---
+
+# Understand This Properly
+
+## replicas
+
+```yaml id="fjlwm0"
+replicas: 1
+```
+
+Means:
+
+* create 1 pod
+
+---
+
+## selector
+
+```yaml id="zjlwm1"
+selector:
+  matchLabels:
+    app: user-service
+```
+
+Deployment manages pods with this label.
+
+---
+
+## template.labels
+
+```yaml id="6xjlwm"
+labels:
+  app: user-service
+```
+
+Pod gets this label.
+
+---
+
+# MOST IMPORTANT CONCEPT
+
+Selector matches labels.
+
+```text id="tx0pva"
+Deployment
+   ↓ selector
+app=user-service
+   ↓
+Pod with same label
+```
+
+Same concept later used in Services also.
+
+---
+
+# Step 2 Service YAML
+
+Create:
+
+```text id="0jlwmn"
+user-service.yml
+```
+
+Example:
+
+```yaml id="33tbxv"
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: user-service
+
+spec:
+  type: NodePort
+
+  selector:
+    app: user-service
+
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      nodePort: 30081
+```
+
+---
+
+# Understand Service Properly
+
+## selector
+
+```yaml id="u9jlwm"
+selector:
+  app: user-service
+```
+
+Service forwards traffic to pods having:
+
+* app=user-service
+
+---
+
+## port
+
+Internal service port.
+
+---
+
+## targetPort
+
+Pod container port.
+
+Spring Boot running on:
+
+```text id="7jlwmr"
+8081
+```
+
+---
+
+## nodePort
+
+External VM port.
+
+Access using:
+
+```bash id="yzjlwm"
+curl http://<VM-IP>:30081/users
+```
+
+---
+
+# Communication Flow
+
+```text id="1jjlwm"
+curl
+ ↓
+NodePort Service
+ ↓
+Deployment
+ ↓
+Pod
+ ↓
+Container
+ ↓
+Spring Boot App
+```
+
+---
+
+# Commands
+
+Apply deployment:
+
+```bash id="sjlwmc"
+kubectl apply -f user-deployment.yml
+```
+
+Apply service:
+
+```bash id="0qjlwm"
+kubectl apply -f user-service.yml
+```
+
+---
+
+# Check Resources
+
+## Pods
+
+```bash id="8jlwmx"
+kubectl get pods
+```
+
+---
+
+## Deployments
+
+```bash id="5jlwm9"
+kubectl get deployments
+```
+
+---
+
+## Services
+
+```bash id="jlwmd"
+kubectl get svc
+```
+
+---
+
+# Access Application
+
+If using Minikube:
+
+```bash id="jlwm1e"
+minikube service user-service
+```
+
+OR:
+
+```bash id="njlwm5"
+curl http://<node-ip>:30081/users
+```
+
+---
+
+# Then Expand Architecture
+
+After user-service works:
+
+```text id="jlwm6m"
+user-service
+product-service
+order-service
+payment-service
+postgres
+```
+
+Then introduce:
+
+* ClusterIP
+* Ingress
+* ConfigMaps
+* Secrets
+
+---
+
+# Real Industry Pattern
+
+External services:
+
+* Ingress / LoadBalancer
+
+Internal microservice communication:
+
+* ClusterIP
+
+Example:
+
+```text id="jlwm8n"
+Internet
+   ↓
+Ingress
+   ↓
+user-service
+   ↓
+order-service
+   ↓
+postgres-service
+```
+
+---
+
+# Your BEST Next Step
+
+Do ONLY this now:
+
+```text id="jlwm9r"
+1. Install Kubernetes (Minikube)
+2. Deploy ONLY user-service
+3. Create NodePort service
+4. Access via curl
+5. Scale replicas
+6. Observe pods
+```
+
+That will make Kubernetes concepts crystal clear before multi-microservice complexity.
+

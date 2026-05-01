@@ -1,0 +1,5 @@
+/home/nikitha/ecommerce/product-service/src/main/java/com/example/product/service/ProductserviceApplication.java
+/home/nikitha/ecommerce/product-service/src/main/java/com/example/product/service/controller/ProductController.java
+/home/nikitha/ecommerce/product-service/src/main/java/com/example/product/service/entity/Product.java
+/home/nikitha/ecommerce/product-service/src/main/java/com/example/product/service/repository/ProductRepository.java
+/home/nikitha/ecommerce/product-service/src/main/java/com/example/product/service/service/ProductService.java
